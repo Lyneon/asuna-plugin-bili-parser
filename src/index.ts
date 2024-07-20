@@ -14,7 +14,7 @@ const biliShortLinkRegex = /https?:\/\/(?:www\.)?b23\.tv\/(\w+)/i;
 
 class BiliParser {
 	constructor(ctx: Context) {
-		ctx.middleware(async (session: Session) => {
+		ctx.middleware(async (session, next) => {
 			let videoID = { AVID: null, BVID: null }
 
 			if (biliAVIDRegex.test(session.content)) {
@@ -34,9 +34,11 @@ class BiliParser {
 			if (res.code !== 0) return
 
 			BiliParser.sendSessionMessage(session, res)
+
+			await next()
 		})
 
-		ctx.middleware(async (session: Session) => {
+		ctx.middleware(async (session, next) => {
 			if (biliShortLinkRegex.test(session.content)) {
 				const rawPage = await ctx.http.get(session.content.match(biliShortLinkRegex)[0], {
 					redirect: 'manual',
@@ -49,6 +51,8 @@ class BiliParser {
 
 				BiliParser.sendSessionMessage(session, res)
 			}
+
+			await next()
 		})
 	}
 
@@ -59,7 +63,7 @@ class BiliParser {
 				h('p', `UP主: ${res.data.owner.name}`),
 				h('p', `${res.data.stat.view} 播放  ${res.data.stat.like} 点赞  ${res.data.stat.favorite} 收藏`),
 				h('img', { src: res.data.pic }),
-				h('text', res.data.desc),
+				h('p', res.data.desc),
 				h('a', `https://www.bilibili.com/video/${res.data.avid ? res.data.avid : res.data.bvid}`)
 			)
 		)
