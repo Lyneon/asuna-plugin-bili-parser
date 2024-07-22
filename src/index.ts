@@ -26,16 +26,19 @@ class BiliParser {
 				videoID.BVID = match[1] || match[2]
 			}
 
-			if (!videoID.AVID && !videoID.BVID) return
+			if (!videoID.AVID && !videoID.BVID) return next()
 
 			const api = new VideoInfoAPI(videoID)
-			const res = await api.getVideoInfo(ctx)
+			try {
+				const res = await api.getVideoInfo(ctx)
+				if (res.code !== 0) return next()
+	
+				BiliParser.sendVideoInfoMessage(session, res)
+			} catch (e) {
+				return next()
+			}
 
-			if (res.code !== 0) return
-
-			BiliParser.sendSessionMessage(session, res)
-
-			await next()
+			return next()
 		})
 
 		ctx.middleware(async (session, next) => {
@@ -45,18 +48,22 @@ class BiliParser {
 				})
 				const match = rawPage.match(biliBVIDRegex)
 				const api = new VideoInfoAPI({ BVID: match[1] || match[2] })
-				const res = await api.getVideoInfo(ctx)
 
-				if (res.code !== 0) return
-
-				BiliParser.sendSessionMessage(session, res)
+				try {
+					const res = await api.getVideoInfo(ctx)
+					if (res.code !== 0) return next()
+	
+					BiliParser.sendVideoInfoMessage(session, res)
+				} catch (e) {
+					return next()
+				}
 			}
 
-			await next()
+			return next()
 		})
 	}
 
-	static sendSessionMessage(session: Session, res: VideoInfo) {
+	static sendVideoInfoMessage(session: Session, res: VideoInfo) {
 		session.send(
 			h('message',
 				h('p', res.data.title),
