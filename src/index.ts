@@ -11,9 +11,11 @@ export const Config: Schema<Config> = Schema.object({})
 const biliAVIDRegex = /av(\d+)|https?:\/\/(?:www\.)?bilibili\.com\/video\/av(\d+)/i;
 const biliBVIDRegex = /BV(\w+)|https?:\/\/(?:www\.)?bilibili\.com\/video\/BV(\w+)/i;
 const biliShortLinkRegex = /https?:\/\/(?:www\.)?b23\.tv\/(\w+)/i;
+const miniAppShareRegex = /b23\.tv\\\/([\w]+)/
 
 class BiliParser {
 	constructor(ctx: Context) {
+		// AV BV 号解析
 		ctx.middleware(async (session, next) => {
 			let videoID = { AVID: null, BVID: null }
 
@@ -32,7 +34,7 @@ class BiliParser {
 			try {
 				const res = await api.getVideoInfo(ctx)
 				if (res.code !== 0) return next()
-	
+
 				BiliParser.sendVideoInfoMessage(session, res)
 			} catch (e) {
 				return next()
@@ -41,6 +43,7 @@ class BiliParser {
 			return next()
 		})
 
+		// 短链接解析
 		ctx.middleware(async (session, next) => {
 			if (biliShortLinkRegex.test(session.content)) {
 				const rawPage = await ctx.http.get(session.content.match(biliShortLinkRegex)[0], {
@@ -52,11 +55,34 @@ class BiliParser {
 				try {
 					const res = await api.getVideoInfo(ctx)
 					if (res.code !== 0) return next()
-	
+
 					BiliParser.sendVideoInfoMessage(session, res)
 				} catch (e) {
 					return next()
 				}
+			}
+
+			return next()
+		})
+
+		// 小程序解析
+		ctx.middleware(async (session, next) => {
+			try {
+				const miniAppJsonData = session.toJSON().message.content
+				if (miniAppShareRegex.test(miniAppJsonData)) {
+					const rawPage = await ctx.http.get(`https://b23.tv/${miniAppJsonData.match(miniAppShareRegex)[1]}`, {
+						redirect: 'manual',
+					})
+					const match = rawPage.match(biliBVIDRegex)
+					const api = new VideoInfoAPI({ BVID: match[1] || match[2] })
+
+					const res = await api.getVideoInfo(ctx)
+					if (res.code !== 0) return next()
+
+					BiliParser.sendVideoInfoMessage(session, res)
+				}
+			} catch (e) {
+				return next()
 			}
 
 			return next()

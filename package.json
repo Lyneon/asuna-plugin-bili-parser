@@ -1,19 +1,36 @@
 {
   "name": "@asuna-bot/koishi-plugin-bili-parser",
   "description": "B站链接转发解析",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "dist"
   ],
+  "contributors": [
+    "WhitePaper233 <wp233@gmail.com>"
+  ],
   "license": "MIT",
+  "homepage": "https://github.com/WhitePaper233/asuna-plugin-bili-parser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WhitePaper233/asuna-plugin-bili-parser.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "bilibili",
+    "哔哩哔哩",
+    "B站"
   ],
+  "koishi": {
+    "description": {
+      "zh": "B站链接转发解析"
+    },
+    "service": {}
+  },
   "peerDependencies": {
     "koishi": "^4.17.9"
   }
