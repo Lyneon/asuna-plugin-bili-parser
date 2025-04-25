@@ -90,14 +90,19 @@ class BiliParser {
 	}
 
 	static sendVideoInfoMessage(session: Session, res: VideoInfo) {
+    const descLength = res.data.desc.length
+    let simplifiedDesc = res.data.desc.substring(0, Math.min(descLength, 100));
+    if (descLength > 100) {
+      simplifiedDesc += "..."
+    }
 		session.send(
 			h('message',
+        h('a', `https://www.bilibili.com/video/${res.data.avid ? res.data.avid : res.data.bvid}`),
 				h('p', res.data.title),
 				h('p', `UP主: ${res.data.owner.name}`),
 				h('p', `${res.data.stat.view} 播放  ${res.data.stat.like} 点赞  ${res.data.stat.favorite} 收藏`),
 				h('img', { src: res.data.pic }),
-				h('p', res.data.desc),
-				h('a', `https://www.bilibili.com/video/${res.data.avid ? res.data.avid : res.data.bvid}`)
+				h('p', simplifiedDesc)
 			)
 		)
 	}
